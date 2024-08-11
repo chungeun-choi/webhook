@@ -3,6 +3,7 @@ package mutating
 import (
 	"context"
 	"fmt"
+	"github.com/chungeun-choi/webhook/service/kube_cluster"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/singleflight"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -15,14 +16,14 @@ import (
 
 // MutatingManager is a struct that contains the client and the singleflight.Group
 type MutatingManager struct { // name is a string that represents the name of the mutating webhook
-	Client             ClientInterface                                          // Client is an interface that contains the AdmissionregistrationV1 method
+	Client             kube_cluster.ClientInterface                             // Client is an interface that contains the AdmissionregistrationV1 method
 	admissionInitGroup singleflight.Group                                       // singleflight.Group is a struct that provides a duplicate function call suppression
 	once               sync.Once                                                // once is a struct that provides a mechanism for performing exactly one action
 	admissionV1Client  admissionregistrationv1.AdmissionregistrationV1Interface // AdmissionregistrationV1Interface is an interface that contains the MutatingWebhookConfigurations method
 }
 
 // NewMutateManager is a function that creates a new instance of MutatingManager
-func NewMutateManager(client ClientInterface) *MutatingManager {
+func NewMutateManager(client kube_cluster.ClientInterface) *MutatingManager {
 	return &MutatingManager{
 		Client: client,
 	}

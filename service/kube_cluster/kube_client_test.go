@@ -1,13 +1,13 @@
-package mutating_test
+package kube_cluster_test
 
 import (
 	"fmt"
 	"github.com/chungeun-choi/webhook/bootstrap/config"
+	"github.com/chungeun-choi/webhook/service/kube_cluster"
 	"os"
 	"testing"
 
 	"github.com/chungeun-choi/webhook/bootstrap"
-	"github.com/chungeun-choi/webhook/service/mutating"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake" // Adjust the import path as necessary.
@@ -78,7 +78,7 @@ users:
 			name: "WithExistingClientCache",
 			setup: func() {
 				// Set a fake clientset in the ClientCache
-				mutating.ClientCache = fake.NewSimpleClientset()
+				kube_cluster.ClientCache = fake.NewSimpleClientset()
 			},
 			expectError:    false,
 			expectedClient: true,
@@ -98,7 +98,7 @@ users:
 			}
 
 			// Call CreateClientSet
-			err := mutating.CreateClientSet()
+			err := kube_cluster.CreateClientSet()
 
 			// Assert on error expectation
 			if tc.expectError {
@@ -109,13 +109,13 @@ users:
 
 			// Assert on ClientCache expectation
 			if tc.expectedClient {
-				assert.NotNil(t, mutating.ClientCache, "ClientCache should be initialized")
+				assert.NotNil(t, kube_cluster.ClientCache, "ClientCache should be initialized")
 			} else {
-				assert.Nil(t, mutating.ClientCache, "ClientCache should not be initialized")
+				assert.Nil(t, kube_cluster.ClientCache, "ClientCache should not be initialized")
 			}
 
 			// Reset ClientCache after each test
-			mutating.ClientCache = nil
+			kube_cluster.ClientCache = nil
 		})
 	}
 }
