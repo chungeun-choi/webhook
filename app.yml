@@ -1,0 +1,9 @@
+name: my-webhook-server
+hostname: example.com
+admission_review_version:
+  - v1
+  - v1beta1
+port: 8443
+cert_file: /path/to/certfile.crt
+key_file: /path/to/keyfile.key
+service_name: my-webhook-service
