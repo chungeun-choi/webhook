@@ -1,30 +1,23 @@
 package main
 
 import (
+	module_config "github.com/chungeun-choi/webhook/bootstrap/config"
+	"github.com/chungeun-choi/webhook/bootstrap/server"
 	"github.com/chungeun-choi/webhook/service/patch"
 	"log"
-	"net/http"
 )
 
 func main() {
-	//if _, err := config.LoadConfig("app.yml"); err != nil {
-	//	panic(err)
-	//}
-	//// Create a client interface implementation here
-	//if err := mutating.CreateClientSet(); err != nil {
-	//	panic(err)
-	//}
-	//
-	//mutateManager := mutating.NewMutateManager(mutating.ClientCache)
-	//
-	//// Create the HTTP server and start listening on a port
-	//http.ListenAndServe(":8080", mutating.NewMux(mutateManager))
+	var (
+		config *module_config.ServerConfig
+		err    error
+	)
+	if config, err = module_config.LoadConfig("./app.yml"); err != nil {
+		log.Panicf("Error loading server configs: %v", err)
+	}
 
-	http.HandleFunc("/addPatch", patch.AddPatchHandler)
-	http.HandleFunc("/getPatch", patch.GetPatchHandler)
-	http.HandleFunc("/updatePatch", patch.UpdatePatchHandler)
-	http.HandleFunc("/clearPatch", patch.ClearPatchHandler)
+	server := server.NewServer(config)
+	patch.RegisterHandlers(server)
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
+	server.Run()
 }

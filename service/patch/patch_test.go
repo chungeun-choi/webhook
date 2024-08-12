@@ -26,7 +26,7 @@ func TestUpdatePatchOperation(t *testing.T) {
 	endpoint := "/example"
 	NewPatchManager(endpoint)
 
-	req := RequestOpBody{
+	req := RequestPatch{
 		Objects: []Object{
 			{
 				Op:                "add",
@@ -52,7 +52,7 @@ func TestClearPatchOperations(t *testing.T) {
 	endpoint := "/example"
 	pm := NewPatchManager(endpoint)
 
-	pm.AddPatchOperations(RequestOpBody{
+	_ = pm.AddPatchOperations(RequestPatch{
 		Objects: []Object{
 			{
 				Op:                "add",
@@ -71,7 +71,7 @@ func TestAddPatchOperations(t *testing.T) {
 	endpoint := "/example"
 	pm := NewPatchManager(endpoint)
 
-	req := RequestOpBody{
+	req := RequestPatch{
 		Objects: []Object{
 			{
 				Op:                "add",

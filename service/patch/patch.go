@@ -29,7 +29,7 @@ func NewPatchManager(endpointPath string) *PatchManager {
 }
 
 // Update updates the patch operations for the PatchManager. it was clear the existing patch operations and add the new ones
-func (pm *PatchManager) updatePatchOperation(req RequestOpBody) error {
+func (pm *PatchManager) updatePatchOperation(req RequestPatch) error {
 	// Clear the existing patch operations
 	pm.ClearPatchOperations()
 
@@ -47,7 +47,7 @@ func (pm *PatchManager) ClearPatchOperations() {
 }
 
 // AddPatchOperations adds the patch operations to the PatchManager
-func (pm *PatchManager) AddPatchOperations(req RequestOpBody) error {
+func (pm *PatchManager) AddPatchOperations(req RequestPatch) error {
 	for _, obj := range req.Objects {
 		operation, err := convertToPatchOperation(obj)
 		if err != nil {
