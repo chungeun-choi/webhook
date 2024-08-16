@@ -2,10 +2,8 @@ package mutating
 
 import (
 	"fmt"
-	"github.com/chungeun-choi/webhook/bootstrap"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
 )
 
 type ConfigBuilder struct {
@@ -21,7 +19,7 @@ func (b *ConfigBuilder) WithMetaInfo(name string) *ConfigBuilder {
 	return b
 }
 
-func (b *ConfigBuilder) WithWebhook(builder WebhookConfigBuilder) *ConfigBuilder {
+func (b *ConfigBuilder) WithWebhook(builder *WebhookConfigBuilder) *ConfigBuilder {
 	b.Webhooks = append(b.Webhooks, builder.MutatingWebhook)
 	return b
 }
@@ -30,28 +28,35 @@ type WebhookConfigBuilder struct {
 	admissionregistrationv1.MutatingWebhook
 }
 
+func NewWebhookConfigBuilder() *WebhookConfigBuilder {
+	return &WebhookConfigBuilder{}
+}
+
 // WithName sets the name of the webhook
 func (b *WebhookConfigBuilder) WithName(name string) *WebhookConfigBuilder {
 	b.Name = name
 	return b
 }
 
-// WithClientConfig sets the client configuration for the webhook
-func (b *WebhookConfigBuilder) WithClientConfig(endpoint string, caPem []byte) *WebhookConfigBuilder {
-	b.ClientConfig.CABundle = caPem
+// WithAdmissionReviewVersions sets the admission review versions for the webhook - required
+func (b *WebhookConfigBuilder) WithAdmissionReviewVersions(versions ...string) *WebhookConfigBuilder {
+	b.AdmissionReviewVersions = versions
+	return b
+}
 
-	if bootstrap.IsRunningInK8S {
-		// Use the service reference
-		b.ClientConfig.Service = &admissionregistrationv1.ServiceReference{
-			Name:      bootstrap.ServerConfigs.ServiceName,
-			Namespace: bootstrap.Namespace,
-			Path:      &endpoint,
-		}
-	} else {
-		// Use the direct URL
-		url := fmt.Sprintf("https://%s:%s%s", bootstrap.ServerConfigs.Hostname, strconv.Itoa(bootstrap.ServerConfigs.Port), endpoint)
-		b.ClientConfig.URL = &url
-	}
+// WithSideEffect sets the side effect for the webhook - required
+func (b *WebhookConfigBuilder) WithSideEffect(sideEffect admissionregistrationv1.SideEffectClass) *WebhookConfigBuilder {
+	b.SideEffects = &sideEffect
+	return b
+}
+
+// WithClientConfig sets the client configuration for the webhook - required
+func (b *WebhookConfigBuilder) WithClientConfig(url, endpoint string) *WebhookConfigBuilder {
+	//b.ClientConfig.CABundle = caPem
+
+	//Use the direct URL
+	url = fmt.Sprintf("https://%v/%s/%s/%s", url, "patch", endpoint, "trigger")
+	b.ClientConfig.URL = &url
 	return b
 }
 

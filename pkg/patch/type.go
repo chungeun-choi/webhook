@@ -7,7 +7,7 @@ type PatchBase struct {
 
 type Object struct {
 	Op                string      `json:"op"`
-	RequestObjectType string      `json:"objectType"`
+	RequestObjectType string      `json:"requestObjectType"`
 	TargetObjectType  string      `json:"targetObjectType"`
 	RequestSpec       interface{} `json:"spec"`
 }
@@ -21,8 +21,8 @@ type PatchOperation struct {
 type RequestPatch PatchBase
 
 type ResponsePatch struct {
-	EndpointPath    string           `json:"endpoint_path"`
-	PatchOperations []PatchOperation `json:"patch_operations"`
+	EndpointPath    string           `json:"endpointPath"`
+	PatchOperations []PatchOperation `json:"patchOperations"`
 }
 
 type ResponseBody struct {
@@ -30,7 +30,7 @@ type ResponseBody struct {
 }
 
 type ResponsePatchList struct {
-	PatchList []ResponsePatch `json:"patch_list"`
+	PatchList []ResponsePatch `json:"patchList"`
 }
 
 // Constant for the target request	object type

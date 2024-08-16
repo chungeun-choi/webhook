@@ -6,7 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"github.com/chungeun-choi/webhook/common/errors"
+	"github.com/chungeun-choi/webhook/errors"
 	"math/big"
 	"time"
 )

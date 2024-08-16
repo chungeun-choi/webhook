@@ -15,9 +15,12 @@ type ServerConfig struct {
 	Port                   int      `yaml:"port"`                     // webhook server port
 	CertFile               string   `yaml:"cert_file"`                // path to the x509 certificate for https
 	KeyFile                string   `yaml:"key_file"`                 // path to the x509 private key matching `CertFile`
-	ServiceName            string   `yaml:"service_name"`             // webhook service name in k8s
+	ServiceName            string   `yaml:"service_name"`             // webhook pkg name in k8s
 	KubeAPIServerURL       string   `yaml:"kube_api_server_url"`      // k8s cluster host
-	TokenPath              string   `yaml:"token"`                    // token for k8s cluster
+	TokenPath              string   `yaml:"token_path"`
+	Token                  string
+	IsPod                  bool
+	// token.txt for k8s cluster
 }
 
 // LoadConfig reads a YAML file and unmarshals its content into a ServerConfig struct.
@@ -39,5 +42,34 @@ func LoadConfig(filePath string) (*ServerConfig, error) {
 		return nil, fmt.Errorf("failed to unmarshal YAML data: %w", err)
 	}
 
+	// Load the token.txt.
+	if config.TokenPath != "" {
+		if config.Token, err = loadToken(config.TokenPath); err != nil {
+			return nil, fmt.Errorf("failed to load token.txt: %w", err)
+		}
+	}
+
+	// Check if running in a pod.
+	config.IsPod = checkRunningInPod()
+
 	return &config, nil
+}
+
+// LoadToken reads a token.txt file and returns the token.txt.
+func loadToken(path string) (string, error) {
+	// Read the token.txt file.
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("Error reading token.txt file: %v", err)
+		return "", fmt.Errorf("failed to read token.txt file: %w", err)
+	}
+	return string(data), nil
+}
+
+func checkRunningInPod() bool {
+	if _, err := os.Stat("/var/run/secrets/kubernetes.io/serviceaccount/token"); err == nil {
+		return true
+	}
+
+	return false
 }

@@ -1,118 +1,128 @@
-package patch
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/chungeun-choi/webhook/bootstrap/server"
+	server2 "github.com/chungeun-choi/webhook/internal/server"
+	"github.com/chungeun-choi/webhook/pkg/patch"
 	"log"
 	"net/http"
 )
 
-func RegisterHandlers(s *server.Server) {
+func RegisterPatchHandlers(s *server2.Server) {
 	s.AddHandler("/patch", map[string]map[string]http.HandlerFunc{
-		"":                  {"POST": AddPatchHandler, "GET": GetPatchHandler},
-		"/{endpoint}":       {"POST": UpdatePatchHandler, "DELETE": DeletePatchManager},
-		"/{endpoint}/clear": {"GET": ClearPatchHandler},
+		"":                    {"POST": addPatchHandler, "GET": getPatchHandler},
+		"/{endpoint}":         {"POST": updatePatchHandler, "DELETE": deletePatchHandler},
+		"/{endpoint}/clear":   {"GET": clearPatchHandler},
+		"/{endpoint}/trigger": {"POST": triggerPatchHandler},
 	})
 }
 
 // GetPatchHandler returns the patch operations for the given endpoint
-func GetPatchHandler(w http.ResponseWriter, r *http.Request) {
+func getPatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// If no endpoint query parameter is provided, return the list of patch operations
-	if param := r.URL.Query().Get("endpoint"); param == "" {
-		var rsp *ResponsePatchList = new(ResponsePatchList)
+	var req string
 
-		if len(ManagerMap) == 0 {
+	// If no endpoint query parameter is provided, return the list of patch operations
+	if req = r.URL.Query().Get("endpoint"); req == "" {
+		rsp := new(patch.ResponsePatchList)
+
+		if len(patch.ManagerMap) == 0 {
 			w.WriteHeader(http.StatusNoContent)
 		}
 
-		for k, v := range ManagerMap {
-			rsp.PatchList = append(rsp.PatchList, ResponsePatch{
+		for k, v := range patch.ManagerMap {
+			rsp.PatchList = append(rsp.PatchList, patch.ResponsePatch{
 				EndpointPath:    k,
 				PatchOperations: v.GetPatchOperations(),
 			})
 		}
 
 		// Return the list of patch operations
-		server.WriteJson(w, http.StatusOK, rsp)
+		server2.WriteJson(w, http.StatusOK, rsp)
 	} else {
-		var rsp *ResponsePatch = new(ResponsePatch)
+		rsp := new(patch.ResponsePatch)
 
-		if result, ok := ManagerMap[param]; !ok {
+		if result, ok := patch.ManagerMap[req]; !ok {
 			http.Error(w, "Patch manager not found", http.StatusNotFound)
 			return
 		} else {
-			rsp.EndpointPath = param
+			rsp.EndpointPath = req
 			rsp.PatchOperations = result.GetPatchOperations()
 		}
 
 		// Return the list of patch operations as JSON
-		server.WriteJson(w, http.StatusOK, rsp)
+		server2.WriteJson(w, http.StatusOK, rsp)
 	}
 
 }
 
 // AddPatchHandler adds a new patch operation
-func AddPatchHandler(w http.ResponseWriter, r *http.Request) {
+func addPatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var req RequestPatch
+	var (
+		req *patch.RequestPatch
+		rsp *patch.ResponseBody
+	)
+
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	pm := NewPatchManager(req.EndpointPath)
-	err = pm.AddPatchOperations(req)
+	pm := patch.NewPatchManager(req.EndpointPath)
+	err = pm.AddPatchOperations(*req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	server.WriteJson(w, http.StatusOK, req)
+	rsp = new(patch.ResponseBody)
+	rsp.Message = "Patch operation added successfully"
+	server2.WriteJson(w, http.StatusOK, rsp)
 }
 
 // UpdatePatchHandler updates the patch operation with the given id
-func UpdatePatchHandler(w http.ResponseWriter, r *http.Request) {
+func updatePatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var req RequestPatch
+	var req patch.RequestPatch
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	pm, ok := ManagerMap[req.EndpointPath]
+	pm, ok := patch.ManagerMap[req.EndpointPath]
 	if !ok {
 		log.Printf("Patch manager not found for endpoint %s", req.EndpointPath)
 		http.Error(w, fmt.Sprintf("Patch manager not found for endpoint %s", req.EndpointPath), http.StatusBadRequest)
 		return
 	}
 
-	err = pm.updatePatchOperation(req)
+	err = pm.UpdatePatchOperation(req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	server.WriteJson(w, http.StatusOK, req)
+	server2.WriteJson(w, http.StatusOK, req)
 }
 
 // ClearPatchHandler clears the patch operations for the given endpoint
-func ClearPatchHandler(w http.ResponseWriter, r *http.Request) {
+func clearPatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -124,7 +134,7 @@ func ClearPatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pm, ok := ManagerMap[endpointPath]
+	pm, ok := patch.ManagerMap[endpointPath]
 	if !ok {
 		http.Error(w, "Patch manager not found", http.StatusNotFound)
 		return
@@ -132,10 +142,10 @@ func ClearPatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	pm.ClearPatchOperations()
 
-	server.WriteJson(w, http.StatusOK, nil)
+	server2.WriteJson(w, http.StatusOK, nil)
 }
 
-func DeletePatchManager(w http.ResponseWriter, r *http.Request) {
+func deletePatchHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -147,13 +157,15 @@ func DeletePatchManager(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, ok := ManagerMap[endpointPath]
+	_, ok := patch.ManagerMap[endpointPath]
 	if !ok {
 		http.Error(w, "Patch manager not found", http.StatusNotFound)
 		return
 	}
 
-	delete(ManagerMap, endpointPath)
+	delete(patch.ManagerMap, endpointPath)
 
-	server.WriteJson(w, http.StatusOK, nil)
+	server2.WriteJson(w, http.StatusOK, nil)
 }
+
+func triggerPatchHandler(w http.ResponseWriter, r *http.Request) {}

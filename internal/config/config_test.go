@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"github.com/chungeun-choi/webhook/bootstrap/config"
+	"github.com/chungeun-choi/webhook/internal/config"
 	"os"
 	"testing"
 
@@ -18,7 +18,7 @@ admission_review_version:
 port: 8443
 cert_file: /path/to/certfile.crt
 key_file: /path/to/keyfile.key
-service_name: my-webhook-service
+service_name: my-webhook-pkg
 `
 
 // Test file path
@@ -56,5 +56,5 @@ func TestLoadConfig(t *testing.T) {
 	assert.Equal(t, 8443, cfg.Port)
 	assert.Equal(t, "/path/to/certfile.crt", cfg.CertFile)
 	assert.Equal(t, "/path/to/keyfile.key", cfg.KeyFile)
-	assert.Equal(t, "my-webhook-service", cfg.ServiceName)
+	assert.Equal(t, "my-webhook-pkg", cfg.ServiceName)
 }

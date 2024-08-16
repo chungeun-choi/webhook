@@ -1,23 +1,27 @@
 package main
 
 import (
-	module_config "github.com/chungeun-choi/webhook/bootstrap/config"
-	"github.com/chungeun-choi/webhook/bootstrap/server"
-	"github.com/chungeun-choi/webhook/service/patch"
+	"github.com/chungeun-choi/webhook/internal/config"
+	"github.com/chungeun-choi/webhook/internal/handlers"
+	"github.com/chungeun-choi/webhook/internal/server"
 	"log"
 )
 
 func main() {
-	var (
-		config *module_config.ServerConfig
-		err    error
-	)
-	if config, err = module_config.LoadConfig("./app.yml"); err != nil {
-		log.Panicf("Error loading server configs: %v", err)
+	// Load the configuration
+	cfg, err := config.LoadConfig("app.yml")
+	if err != nil {
+		log.Fatalf("Failed to load the configuration: %v", err)
 	}
 
-	server := server.NewServer(config)
-	patch.RegisterHandlers(server)
+	// Create a new newServer
+	newServer := server.NewServer(cfg)
 
-	server.Run()
+	// Add the handlers
+	if err = handlers.InitHandler(newServer); err != nil {
+		log.Fatalf("Failed to initialize handlers: %v", err)
+	}
+
+	// Run the newServer
+	newServer.Run()
 }

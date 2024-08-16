@@ -3,7 +3,7 @@ package cert
 import (
 	"bytes"
 	"encoding/pem"
-	"github.com/chungeun-choi/webhook/common/errors"
+	"github.com/chungeun-choi/webhook/errors"
 )
 
 func EncodeToPem(data []byte, typeInfo string) (*bytes.Buffer, error) {

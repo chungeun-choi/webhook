@@ -1,7 +1,7 @@
 package patch
 
 import (
-	"github.com/pkg/errors"
+	"errors"
 	"log"
 )
 
@@ -10,26 +10,23 @@ var (
 )
 
 type PatchManager struct {
-	EndpointPath    string
 	PatchOperations []PatchOperation
 }
 
-func NewPatchManager(endpointPath string) *PatchManager {
+func NewPatchManager(name string) *PatchManager {
 	var pm *PatchManager
-	if _, ok := ManagerMap[endpointPath]; !ok {
-		pm = &PatchManager{
-			EndpointPath: endpointPath,
-		}
-		ManagerMap[endpointPath] = pm
+	if _, ok := ManagerMap[name]; !ok {
+		pm = &PatchManager{}
+		ManagerMap[name] = pm
 	} else {
-		pm = ManagerMap[endpointPath]
+		pm = ManagerMap[name]
 	}
 
 	return pm
 }
 
 // Update updates the patch operations for the PatchManager. it was clear the existing patch operations and add the new ones
-func (pm *PatchManager) updatePatchOperation(req RequestPatch) error {
+func (pm *PatchManager) UpdatePatchOperation(req RequestPatch) error {
 	// Clear the existing patch operations
 	pm.ClearPatchOperations()
 

@@ -2,22 +2,22 @@ package server
 
 import (
 	"fmt"
+	"github.com/chungeun-choi/webhook/internal/config"
 	"log"
 	"net/http"
 
-	"github.com/chungeun-choi/webhook/bootstrap/config"
 	"github.com/gorilla/mux"
 )
 
 type Server struct {
 	Router *mux.Router
-	config *config.ServerConfig
+	Config *config.ServerConfig
 }
 
 func NewServer(config *config.ServerConfig) *Server {
 	return &Server{
 		Router: mux.NewRouter(),
-		config: config,
+		Config: config,
 	}
 }
 
@@ -25,7 +25,7 @@ func (s *Server) Run() {
 	// 서버 시작 전 라우트 출력
 	s.printRoutes()
 
-	address := fmt.Sprintf("%v:%v", s.config.Hostname, s.config.Port)
+	address := fmt.Sprintf("%v:%v", s.Config.Hostname, s.Config.Port)
 	log.Printf("Starting server on %s\n", address)
 	if err := http.ListenAndServe(address, s.Router); err != nil {
 		log.Fatalf("Could not start server: %s\n", err)
