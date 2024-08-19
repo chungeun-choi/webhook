@@ -17,10 +17,10 @@ type ServerConfig struct {
 	KeyFile                string   `yaml:"key_file"`                 // path to the x509 private key matching `CertFile`
 	ServiceName            string   `yaml:"service_name"`             // webhook pkg name in k8s
 	KubeAPIServerURL       string   `yaml:"kube_api_server_url"`      // k8s cluster host
+	AdmissionFailurePolicy string   `yaml:"admission_failure_policy"` // admission failure policy
 	TokenPath              string   `yaml:"token_path"`
 	Token                  string
 	IsPod                  bool
-	// token.txt for k8s cluster
 }
 
 // LoadConfig reads a YAML file and unmarshals its content into a ServerConfig struct.
@@ -47,6 +47,10 @@ func LoadConfig(filePath string) (*ServerConfig, error) {
 		if config.Token, err = loadToken(config.TokenPath); err != nil {
 			return nil, fmt.Errorf("failed to load token.txt: %w", err)
 		}
+	}
+
+	if config.AdmissionFailurePolicy == "" {
+		config.AdmissionFailurePolicy = "Ignore"
 	}
 
 	// Check if running in a pod.

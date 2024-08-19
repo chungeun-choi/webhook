@@ -1,95 +1,59 @@
 package patch
 
 import (
-	"errors"
+	"encoding/json"
+	admissionv1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 )
 
-var (
-	ManagerMap map[string]*PatchManager = make(map[string]*PatchManager)
-)
+func Patch(name string) *admissionv1.AdmissionResponse {
+	var result *admissionv1.AdmissionResponse = new(admissionv1.AdmissionResponse)
 
-type PatchManager struct {
-	PatchOperations []PatchOperation
-}
-
-func NewPatchManager(name string) *PatchManager {
-	var pm *PatchManager
-	if _, ok := ManagerMap[name]; !ok {
-		pm = &PatchManager{}
-		ManagerMap[name] = pm
+	if patchManager, ok := ManagerMap[name]; !ok {
+		result.Result = &metav1.Status{
+			Message: "No patch manager found",
+		}
 	} else {
-		pm = ManagerMap[name]
-	}
+		// Add an annotation to the object
+		patchManager.PatchOperations = append(patchManager.PatchOperations, createAnnotationPatch())
 
-	return pm
-}
-
-// Update updates the patch operations for the PatchManager. it was clear the existing patch operations and add the new ones
-func (pm *PatchManager) UpdatePatchOperation(req RequestPatch) error {
-	// Clear the existing patch operations
-	pm.ClearPatchOperations()
-
-	return pm.AddPatchOperations(req)
-}
-
-// GetPatchOperations returns the patch operations for the PatchManager
-func (pm *PatchManager) GetPatchOperations() []PatchOperation {
-	return pm.PatchOperations
-}
-
-// ClearPatchOperations clears the patch operations for the PatchManager
-func (pm *PatchManager) ClearPatchOperations() {
-	pm.PatchOperations = nil
-}
-
-// AddPatchOperations adds the patch operations to the PatchManager
-func (pm *PatchManager) AddPatchOperations(req RequestPatch) error {
-	for _, obj := range req.Objects {
-		operation, err := convertToPatchOperation(obj)
+		// Marshal the patch operations
+		data, err := json.Marshal(patchManager.PatchOperations)
 		if err != nil {
 			log.Printf("Error: %v", err)
-			return err
+
+			return result
 		}
 
-		pm.PatchOperations = append(pm.PatchOperations, *operation)
-	}
-
-	return nil
-}
-
-// convertToPatchOperation converts the request object to a PatchOperation
-func convertToPatchOperation(info Object) (*PatchOperation, error) {
-	var path string
-
-	path, err := basePath(info.RequestObjectType, info.TargetObjectType)
-	if err != nil {
-		log.Printf("Error: %v", err)
-		return nil, err
-	}
-
-	return &PatchOperation{
-		Op:    info.Op,
-		Path:  path,
-		Value: info,
-	}, nil
-}
-
-// basePath determines the JSON path where the requestObjectType should be added to the targetObjectType
-func basePath(requestObjectType, targetObjectType string) (string, error) {
-	switch targetObjectType {
-	case DEPLOYMENT, STATEFULSET:
-		switch requestObjectType {
-		case CONTAINER:
-			return "/spec/template/spec/containers", nil
-		case POD:
-			return "/spec/template/spec", nil
-		case VOLUME:
-			return "/spec/template/spec/volumes", nil
-		default:
-			return "", errors.New(" unsupported request object type")
+		// Create the admission response
+		result = createAdmissionResponseWithPatch(data)
+		if result.Patch == nil {
+			result.Result = &metav1.Status{
+				Message: "No patch data",
+			}
 		}
-	default:
-		return "", errors.New("unsupported target object type")
+
+	}
+
+	return result
+}
+
+func createAnnotationPatch() PatchOperation {
+	return PatchOperation{
+		Op:    "add",
+		Path:  "metadata/annotations",
+		Value: map[string]string{admissionWebhookAnnotationStatusKey: "injected"},
+	}
+}
+
+func createAdmissionResponseWithPatch(patchData []byte) *admissionv1.AdmissionResponse {
+	return &admissionv1.AdmissionResponse{
+		Allowed: true,
+		Patch:   patchData,
+		PatchType: func() *admissionv1.PatchType {
+			pt := admissionv1.PatchTypeJSONPatch
+			return &pt
+		}(),
 	}
 }

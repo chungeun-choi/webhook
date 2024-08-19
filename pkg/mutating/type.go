@@ -31,3 +31,10 @@ type ResponseGetRulesBody struct {
 	Message              string                                               `json:"message"`
 	WebhookConfiguration admissionregistrationv1.MutatingWebhookConfiguration `json:"webhookConfiguration"`
 }
+
+const (
+	// FailurePolicyIgnore is a constant that represents the failure policy ignore
+	FailurePolicyIgnore = admissionregistrationv1.Ignore
+	// FailurePolicyFail is a constant that represents the failure policy fail
+	FailurePolicyFail = admissionregistrationv1.Fail
+)

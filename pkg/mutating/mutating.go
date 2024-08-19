@@ -16,22 +16,25 @@ import (
 	"sync"
 )
 
+type MutatingConfig struct {
+	URL              string
+	Client           kubernetes.ClientInterface
+	AdmissionVersion []string
+	FailurePolicy    admissionregistrationv1.FailurePolicyType
+}
+
 // MutatingManager is a struct that contains the client and the single flight.Group
 type MutatingManager struct {
-	url                string                     // url is a string that represents the URL of the mutating webhook
-	Client             kubernetes.ClientInterface // Client is an interface that contains the Admission registrationV1 method
-	admissionVersion   []string
+	Config             *MutatingConfig                                        // MutatingConfig is a struct that contains the URL, client, admission version, and failure policy
 	admissionInitGroup singleflight.Group                                     // single flight.Group is a struct that provides a duplicate function call suppression
 	admissionV1Client  admissionregistration.AdmissionregistrationV1Interface // Admission registrationV1Interface is an interface that contains the MutatingWebhookConfigurations method
 	once               sync.Once                                              // once is a struct that provides a mechanism for performing exactly one action
 }
 
 // NewMutateManager is a function that creates a new instance of MutatingManager
-func NewMutateManager(client kubernetes.ClientInterface, admissionVersion []string, url string) *MutatingManager {
+func NewMutateManager(config *MutatingConfig) *MutatingManager {
 	return &MutatingManager{
-		Client:           client,
-		admissionVersion: admissionVersion,
-		url:              url,
+		Config: config,
 	}
 }
 
@@ -44,8 +47,8 @@ func (m *MutatingManager) Register(req RequestAddRulesBody) (*ConfigBuilder, err
 	mutatingConfig.WithWebhook(NewWebhookConfigBuilder().
 		WithName(req.Name+".admission"+".webhook").                  // required
 		WithSideEffect(admissionregistrationv1.SideEffectClassNone). // required
-		WithAdmissionReviewVersions(m.admissionVersion...).          // required
-		WithClientConfig(m.url, req.Name).                           // required
+		WithAdmissionReviewVersions(m.Config.AdmissionVersion...).   // required
+		WithClientConfig(m.Config.URL, req.Name).                    // required
 		WithRoles(req.Rules...),
 	)
 
@@ -138,7 +141,7 @@ func (m *MutatingManager) GetAdmissionV1() (admissionregistration.Admissionregis
 	m.once.Do(func() {
 		// Do is a method that executes and returns the result of the function f.
 		v, err, _ := m.admissionInitGroup.Do("admissionV1", func() (interface{}, error) {
-			return m.Client.AdmissionregistrationV1(), nil
+			return m.Config.Client.AdmissionregistrationV1(), nil
 		})
 		if err == nil {
 			m.admissionV1Client = v.(admissionregistration.AdmissionregistrationV1Interface)

@@ -50,6 +50,11 @@ func (b *WebhookConfigBuilder) WithSideEffect(sideEffect admissionregistrationv1
 	return b
 }
 
+func (b *WebhookConfigBuilder) WithFailurePolicy(policy admissionregistrationv1.FailurePolicyType) *WebhookConfigBuilder {
+	b.FailurePolicy = &policy
+	return b
+}
+
 // WithClientConfig sets the client configuration for the webhook - required
 func (b *WebhookConfigBuilder) WithClientConfig(url, endpoint string) *WebhookConfigBuilder {
 	//b.ClientConfig.CABundle = caPem

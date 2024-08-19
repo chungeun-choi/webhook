@@ -8,11 +8,15 @@ import (
 	"github.com/chungeun-choi/webhook/internal/server"
 	"github.com/chungeun-choi/webhook/pkg/mutating"
 	"github.com/gorilla/mux"
+	v1 "k8s.io/api/admissionregistration/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 )
 
-var mutatingManger *mutating.MutatingManager
+var (
+	mutatingManger *mutating.MutatingManager
+	failurePolicy  v1.FailurePolicyType
+)
 
 func RegisterMutatingHandler(s *server.Server) error {
 	kubeClient, err := kubernetes.CreateClientSet(s.Config.KubeAPIServerURL, s.Config.Token)
@@ -20,10 +24,15 @@ func RegisterMutatingHandler(s *server.Server) error {
 		return errors.New("failed to create Kubernetes clientset")
 	}
 
+	failurePolicy = v1.FailurePolicyType(s.Config.AdmissionFailurePolicy)
+
 	mutatingManger = mutating.NewMutateManager(
-		kubeClient,
-		s.Config.AdmissionReviewVersion,
-		fmt.Sprintf("http://%s:%d", s.Config.Hostname, s.Config.Port),
+		&mutating.MutatingConfig{
+			Client:           kubeClient,
+			AdmissionVersion: s.Config.AdmissionReviewVersion,
+			URL:              fmt.Sprintf("http://%s:%d", s.Config.Hostname, s.Config.Port),
+			FailurePolicy:    failurePolicy,
+		},
 	)
 
 	s.AddHandler("/mutating", map[string]map[string]http.HandlerFunc{

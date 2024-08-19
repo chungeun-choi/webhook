@@ -5,6 +5,7 @@ import (
 	"fmt"
 	server2 "github.com/chungeun-choi/webhook/internal/server"
 	"github.com/chungeun-choi/webhook/pkg/patch"
+	"github.com/pkg/errors"
 	"log"
 	"net/http"
 )
@@ -168,4 +169,28 @@ func deletePatchHandler(w http.ResponseWriter, r *http.Request) {
 	server2.WriteJson(w, http.StatusOK, nil)
 }
 
-func triggerPatchHandler(w http.ResponseWriter, r *http.Request) {}
+func triggerPatchHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req string
+	if req = r.URL.Query().Get("endpoint"); req == "" {
+		http.Error(w, "Missing endpoint query parameter", http.StatusBadRequest)
+		return
+	}
+
+	response := patch.Patch(req)
+	if rsp, err := json.Marshal(response); err != nil {
+		server2.WriteJson(w, http.StatusInternalServerError, &patch.ResponseBody{
+			Message: errors.Wrap(err, "Failed to encode response").Error(),
+		})
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if _, err = w.Write(rsp); err != nil {
+			fmt.Printf("Failed to write response: %v", err)
+		}
+	}
+}

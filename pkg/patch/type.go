@@ -45,3 +45,4 @@ const (
 	DEPLOYMENT  = "deployment"
 	STATEFULSET = "statefulset"
 )
+const admissionWebhookAnnotationStatusKey = "sidecar-injector-webhook.morven.me/status"
