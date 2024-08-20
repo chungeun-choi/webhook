@@ -5,6 +5,7 @@ import (
 	"fmt"
 	server2 "github.com/chungeun-choi/webhook/internal/server"
 	"github.com/chungeun-choi/webhook/pkg/patch"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"log"
 	"net/http"
@@ -175,9 +176,13 @@ func triggerPatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req string
-	if req = r.URL.Query().Get("endpoint"); req == "" {
-		http.Error(w, "Missing endpoint query parameter", http.StatusBadRequest)
+	var (
+		req  string
+		vars = mux.Vars(r)
+	)
+
+	if req = vars["endpoint"]; req == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
