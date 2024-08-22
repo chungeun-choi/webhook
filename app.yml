@@ -4,8 +4,7 @@ admission_review_version:
   - v1
   - v1beta1
 port: 8080
-cert_file: cert/apiserver.crt
-key_file: cert/apiserver.key
+admission_failure_policy: Fail
 service_name: my-webhook-pkg
 token_path: token/token.txt
 kube_api_server_url: https://localhost:6443

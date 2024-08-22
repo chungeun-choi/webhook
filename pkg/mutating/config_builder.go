@@ -56,12 +56,14 @@ func (b *WebhookConfigBuilder) WithFailurePolicy(policy admissionregistrationv1.
 }
 
 // WithClientConfig sets the client configuration for the webhook - required
-func (b *WebhookConfigBuilder) WithClientConfig(url, endpoint string) *WebhookConfigBuilder {
+func (b *WebhookConfigBuilder) WithClientConfig(url, endpoint string, caByte []byte) *WebhookConfigBuilder {
 	//b.ClientConfig.CABundle = caPem
 
 	//Use the direct URL
-	url = fmt.Sprintf("https://%v/%s/%s/%s", url, "patch", endpoint, "trigger")
+	url = fmt.Sprintf("%v/%s/%s/%s", url, "patch", endpoint, "trigger")
 	b.ClientConfig.URL = &url
+	b.ClientConfig.CABundle = caByte
+
 	return b
 }
 

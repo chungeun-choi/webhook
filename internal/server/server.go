@@ -5,6 +5,7 @@ import (
 	"github.com/chungeun-choi/webhook/internal/config"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -22,13 +23,15 @@ func NewServer(config *config.ServerConfig) *Server {
 }
 
 func (s *Server) Run() {
-	// 서버 시작 전 라우트 출력
+	// Print the registered routes
 	s.printRoutes()
 
 	address := fmt.Sprintf("%v:%v", s.Config.Hostname, s.Config.Port)
 	log.Printf("Starting server on %s\n", address)
-	if err := http.ListenAndServe(address, s.Router); err != nil {
-		log.Fatalf("Could not start server: %s\n", err)
+
+	// Run the server
+	if err := http.ListenAndServeTLS(address, s.Config.CertFile, s.Config.KeyFile, s.Router); err != nil {
+		log.Fatalf("Failed to start the server: %v", err)
 	}
 }
 
@@ -57,8 +60,18 @@ func (s *Server) AddHandler(prefix string, handlerMap map[string]map[string]http
 	subRouter := s.Router.PathPrefix(prefix).Subrouter()
 	for path, methods := range handlerMap {
 		for method, handlerFunc := range methods {
-			subRouter.HandleFunc(path, handlerFunc).Methods(method)
+			wrappedHandler := s.logRequestDetails(handlerFunc)
+			subRouter.HandleFunc(path, wrappedHandler).Methods(method)
 		}
 	}
 	return s
+}
+
+func (s *Server) logRequestDetails(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+		log.Printf("Handling %s request for %s", r.Method, r.URL.Path)
+		handler.ServeHTTP(w, r)
+		log.Printf("Completed handling %s request for %s in %v", r.Method, r.URL.Path, time.Since(startTime))
+	}
 }

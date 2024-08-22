@@ -36,7 +36,7 @@ type ResponsePatchList struct {
 // Constant for the target request	object type
 const (
 	CONTAINER = "container"
-	POD       = "pod"
+	POD       = "test_patch"
 	VOLUME    = "volume"
 )
 

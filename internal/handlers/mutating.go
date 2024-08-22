@@ -30,8 +30,9 @@ func RegisterMutatingHandler(s *server.Server) error {
 		&mutating.MutatingConfig{
 			Client:           kubeClient,
 			AdmissionVersion: s.Config.AdmissionReviewVersion,
-			URL:              fmt.Sprintf("http://%s:%d", s.Config.Hostname, s.Config.Port),
+			URL:              fmt.Sprintf("https://%s:%d", s.Config.Hostname, s.Config.Port),
 			FailurePolicy:    failurePolicy,
+			CAPath:           s.Config.CaFile,
 		},
 	)
 
