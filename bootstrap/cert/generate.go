@@ -98,12 +98,12 @@ func GenerateCert(orgs, dnsNames []string, commonName string) (*CertPathInfo, er
 		return nil, err
 	}
 
-	err = saveToFile(DefaultCertFilePath+"cert.pem", newCertPEM)
+	err = saveToFile(DefaultCertFilePath+"/cert.pem", newCertPEM)
 	if err != nil {
 		return nil, err
 	}
 
-	err = saveToFile(DefaultCertFilePath+"key.pem", newPrivateKeyPEM)
+	err = saveToFile(DefaultCertFilePath+"/key.pem", newPrivateKeyPEM)
 	if err != nil {
 		return nil, err
 	}

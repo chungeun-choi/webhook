@@ -6,5 +6,5 @@ admission_review_version:
 port: 8080
 admission_failure_policy: Fail
 service_name: my-webhook-pkg
-token_path: token/token.txt
+token_path: token.txt
 kube_api_server_url: https://localhost:6443
